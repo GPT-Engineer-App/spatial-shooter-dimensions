@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Box, Sky, PointerLockControls } from '@react-three/drei';
+import { Box, PointerLockControls, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
 const Bullet = ({ position, direction }) => {
@@ -58,11 +58,30 @@ const Player = ({ onShoot }) => {
   );
 };
 
+const MarsGround = () => {
+  const texture = useTexture('/mars-surface.jpg');
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
+      <planeGeometry args={[1000, 1000]} />
+      <meshStandardMaterial map={texture} />
+    </mesh>
+  );
+};
+
+const MarsRock = ({ position }) => {
+  return (
+    <mesh position={position}>
+      <dodecahedronGeometry args={[Math.random() * 2 + 1, 0]} />
+      <meshStandardMaterial color="#8B4513" roughness={0.8} />
+    </mesh>
+  );
+};
+
 const Game = () => {
   const [targets, setTargets] = useState([
-    { id: 1, position: [5, 0, -5] },
-    { id: 2, position: [-5, 0, -5] },
-    { id: 3, position: [0, 5, -5] },
+    { id: 1, position: [15, 0, -15] },
+    { id: 2, position: [-15, 0, -15] },
+    { id: 3, position: [0, 5, -20] },
   ]);
 
   const [score, setScore] = useState(0);
@@ -85,13 +104,18 @@ const Game = () => {
   return (
     <div className="w-full h-screen">
       <div className="absolute top-0 left-0 p-4 text-white z-10">Score: {score}</div>
-      <Canvas>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} />
-        <Sky />
+      <Canvas camera={{ fov: 75, near: 0.1, far: 1000, position: [0, 1.6, 0] }}>
+        <color attach="background" args={['#FFA07A']} />
+        <fog attach="fog" args={['#FFA07A', 10, 50]} />
+        <ambientLight intensity={0.2} />
+        <directionalLight position={[1, 1, 1]} intensity={0.8} />
         <Player onShoot={handleShoot} />
         {targets.map(target => (
           <Target key={target.id} position={target.position} onHit={() => handleHit(target.id)} />
+        ))}
+        <MarsGround />
+        {[...Array(50)].map((_, i) => (
+          <MarsRock key={i} position={[Math.random() * 100 - 50, 0, Math.random() * 100 - 50]} />
         ))}
         <PointerLockControls />
       </Canvas>
